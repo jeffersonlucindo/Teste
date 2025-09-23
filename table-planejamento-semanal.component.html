@@ -1,0 +1,157 @@
+<div class="content mat-elevation-z2">
+  <button style="position: absolute; right: 7%;" mat-fab color="primary" (click)="openParametrizacao()">
+    <mat-icon>brush</mat-icon>
+  </button>
+
+  <table mat-table [dataSource]="planejamento['usuarioPlanejamento']">
+    <!-- Empregado Column -->
+    <ng-container matColumnDef="empregado">
+      <th mat-header-cell *matHeaderCellDef>
+        <div class="table-info-head">
+          <span>Empregado</span>
+        </div>
+      </th>
+      <td mat-cell *matCellDef="let usuario">
+        <div>
+          <div class="table-name">
+            <mat-checkbox [(ngModel)]="usuario.selecionado" (change)='onChange(usuario)'></mat-checkbox>
+            <span> {{ usuario.nome }} </span>
+            <button *ngIf="usuario.planejamentosExistentes && usuario.planejamentosExistentes.length > 0"
+              mat-icon-button class="hourglassFull">
+              <mat-icon>hourglass_full</mat-icon>
+            </button>
+          </div>
+
+          <!-- replicate diário descriptions -->
+          <div class="table-info-limite-description">
+            <span>Jornada Habitual</span>
+            <div style="font-weight: 700;  font-size: 12px;">máximo (30h técnico) - (40h - gerencial)</div>
+          </div>
+          <div class="table-info-limite-description">
+            <span>Limite HE</span>
+            <div style="font-weight: 700;  font-size: 12px;">máximo 10h</div>
+          </div>
+          <div class="table-info-limite-description">
+            <span>Limite HE - Estendido</span>
+            <div style="font-weight: 700;  font-size: 12px;">sábado (habitual + 2) - domingo e feriado (habitual)</div>
+          </div>
+          <div
+            *ngIf="(podeAprovarGestor && routeCall == ROTA_GESTOR) || (podeAprovarSuperintendente && routeCall == ROTA_SUPERINTENDENTE)"
+            class="table-info">
+            <span>Limite HE - Justificada</span>
+          </div>
+          <div class="table-info">
+            <span>Valor Total HE</span>
+          </div>
+        </div>
+      </td>
+    </ng-container>
+
+    <!-- Weekly Columns -->
+    <ng-container *ngFor="let semana of semanas" [matColumnDef]="semana.numeroSemana.toString()">
+      <th mat-header-cell *matHeaderCellDef>
+        <div class="table-info-head">
+          <span>Semana {{ semana.numeroSemana }}</span>
+          <br>
+          <span>
+            ({{ semana.dataInicio ? (semana.dataInicio | date: 'dd/MM') : 'N/A' }} -
+            {{ semana.dataFim ? (semana.dataFim | date: 'dd/MM') : 'N/A' }})
+          </span>
+        </div>
+      </th>
+      <td mat-cell *matCellDef="let usuario">
+        <!-- Jornada Habitual -->
+        <div class="table-info-limite">
+          <span></span>
+          <div class="semanal-input-wrap">
+            <input
+              matInput
+              type="number"
+              class="semanal-input"
+              [min]="0"
+              [max]="getLimiteSemana(usuario, semana, 'jornadaHabitual')"
+              [disabled]="!hasEligibleDays(usuario, semana, 'jornadaHabitual') || getLimiteSemana(usuario, semana, 'jornadaHabitual') <= 0"
+              [matTooltip]="!hasEligibleDays(usuario, semana, 'jornadaHabitual')
+                ? 'So pode realizar esse planejamento em dias úteis!'
+                : (getLimiteSemana(usuario, semana, 'jornadaHabitual') > 0 ? '' : getTooltipOutrosPlanejamentosSemana(usuario, semana, 'jornadaHabitual'))"
+              matTooltipPosition="above"
+              [ngModel]="getSomaSemana(usuario, semana, 'jornadaHabitual')"
+              (ngModelChange)="setPlanejamentoSemana(usuario, semana, 'jornadaHabitual', $event)"
+            />
+          </div>
+        </div>
+
+        <!-- Limite HE -->
+        <div class="table-info-limite">
+          <span></span>
+          <div class="semanal-input-wrap">
+            <input
+              matInput
+              type="number"
+              class="semanal-input"
+              [min]="0"
+              [max]="getLimiteSemana(usuario, semana, 'limiteHe')"
+              [disabled]="!hasEligibleDays(usuario, semana, 'limiteHe') || getLimiteSemana(usuario, semana, 'limiteHe') <= 0"
+              [matTooltip]="!hasEligibleDays(usuario, semana, 'limiteHe')
+                ? 'So pode realizar esse planejamento em dias úteis!'
+                : (getLimiteSemana(usuario, semana, 'limiteHe') > 0 ? '' : getTooltipOutrosPlanejamentosSemana(usuario, semana, 'limiteHe'))"
+              matTooltipPosition="above"
+              [ngModel]="getSomaSemana(usuario, semana, 'limiteHe')"
+              (ngModelChange)="setPlanejamentoSemana(usuario, semana, 'limiteHe', $event)"
+            />
+          </div>
+        </div>
+
+        <!-- Limite HE - Estendido -->
+        <div class="table-info-limite">
+          <span></span>
+          <div class="semanal-input-wrap">
+            <input
+              matInput
+              type="number"
+              class="semanal-input"
+              [min]="0"
+              [max]="getLimiteSemana(usuario, semana, 'limiteHeEstendido')"
+              [disabled]="!hasEligibleDays(usuario, semana, 'limiteHeEstendido') || getLimiteSemana(usuario, semana, 'limiteHeEstendido') <= 0"
+              [matTooltip]="!hasEligibleDays(usuario, semana, 'limiteHeEstendido')
+                ? 'So pode realizar esse planejamento em fins de semana ou feriados!'
+                : (getLimiteSemana(usuario, semana, 'limiteHeEstendido') > 0 ? '' : getTooltipOutrosPlanejamentosSemana(usuario, semana, 'limiteHeEstendido'))"
+              matTooltipPosition="above"
+              [ngModel]="getSomaSemana(usuario, semana, 'limiteHeEstendido')"
+              (ngModelChange)="setPlanejamentoSemana(usuario, semana, 'limiteHeEstendido', $event)"
+            />
+          </div>
+        </div>
+
+        <!-- Limite HE - Justificada (igual ao diário: visível conforme rota e desabilitado) -->
+        <div class="table-info-limite"
+          *ngIf="(podeAprovarGestor && routeCall == ROTA_GESTOR) || (podeAprovarSuperintendente && routeCall == ROTA_SUPERINTENDENTE)">
+          <span></span>
+          <div class="semanal-input-wrap">
+            <input
+              matInput
+              type="number"
+              class="semanal-input"
+              [min]="0"
+              [max]="getLimiteSemana(usuario, semana, 'limiteHeJustificado')"
+              [disabled]="true"
+              [matTooltip]="getLimiteSemana(usuario, semana, 'limiteHeJustificado') > 0 ? '' : getTooltipOutrosPlanejamentosSemana(usuario, semana, 'limiteHeJustificado')"
+              matTooltipPosition="above"
+              [ngModel]="getSomaSemana(usuario, semana, 'limiteHeJustificado')"
+            />
+          </div>
+        </div>
+
+        <!-- Valor Total HE -->
+        <div class="table-info-limite">
+          <span></span>
+          <span class="semanal-total-valor">R$ {{ getValorTotalSemana(usuario, semana) }}</span>
+        </div>
+      </td>
+    </ng-container>
+
+    <!-- Header and Row Declarations -->
+    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+    <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+  </table>
+</div>
