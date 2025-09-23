@@ -1,0 +1,34 @@
+<table mat-table [dataSource]="planejamento['usuarioPlanejamento']" [ERROR ->][trackByFn]="trackByUsuario" *ngIf="dadosProntos">
+    <!-- Empregado Column -->
+    <ng-container "): ng:///AppComponentingModule/TablePlanejamentoSemanalComponent.html@5:70
+    at syntaxError (compiler.js:2547:1)
+    at TemplateParser.parse (compiler.js:19495:1)
+    at JitCompiler._parseTemplate (compiler.js:25041:1)
+    at JitCompiler._compileTemplate (compiler.js:25028:1)
+    at compiler.js:24971:48
+    at Set.forEach (<anonymous>)
+    at JitCompiler._compileComponents (compiler.js:24971:1)
+    at compiler.js:24881:1
+    at Object.then (compiler.js:2538:33)
+    at JitCompiler._compileModuleAndComponents (compiler.js:24880:1)
+syntaxError @ compiler.js:2547
+(anonymous) @ compiler.js:19495
+(anonymous) @ compiler.js:25041
+(anonymous) @ compiler.js:25028
+(anonymous) @ compiler.js:24971
+(anonymous) @ compiler.js:24971
+(anonymous) @ compiler.js:24881
+then @ compiler.js:2538
+(anonymous) @ compiler.js:24880
+(anonymous) @ compiler.js:24840
+(anonymous) @ platform-browser-dynamic.js:143
+compileNgModuleFactory__PRE_NGCC__ @ core.js:14376
+(anonymous) @ core.js:14559
+./src/main.ts @ main.ts:16
+__webpack_require__ @ bootstrap:78
+0 @ main.ts:21
+__webpack_require__ @ bootstrap:78
+checkDeferredModules @ bootstrap:45
+webpackJsonpCallback @ bootstrap:32
+(anonymous) @ main.js:1Understand this error
+client:148 [WDS] Warnings while compiling.
