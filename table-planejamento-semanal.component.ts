@@ -73,6 +73,19 @@ export class TablePlanejamentoSemanalComponent implements OnChanges, OnInit {
   // Flag para controlar emissões durante inicialização
   private isInitializing = true;
 
+  // TrackBy functions para melhorar performance
+  trackByUsuario = (index: number, item: any) => item.empregadoId || index;
+  trackBySemana = (index: number, item: any) => item.numeroSemana || index;
+
+  // Getter para verificar se os dados estão prontos
+  get dadosProntos(): boolean {
+    return !this.isInitializing &&
+           this.planejamento &&
+           this.planejamento['usuarioPlanejamento'] &&
+           this.dateRange.length > 0 &&
+           this.semanas.length > 0;
+  }
+
   constructor(private dialog: MatDialog,
     public router: Router,
     private cdr: ChangeDetectorRef) { }
@@ -81,11 +94,6 @@ export class TablePlanejamentoSemanalComponent implements OnChanges, OnInit {
 
   ngOnInit() {
     this.routeCall = this.router.url.replace('/', '');
-
-    // Finalizar inicialização após um tempo para evitar problemas
-    setTimeout(() => {
-      this.isInitializing = false;
-    }, 100);
   }
 
   ngOnChanges(changes: SimpleChanges) {
@@ -113,8 +121,7 @@ export class TablePlanejamentoSemanalComponent implements OnChanges, OnInit {
     // Finalizar inicialização após processamento
     setTimeout(() => {
       this.isInitializing = false;
-      this.cdr.detectChanges();
-    }, 0);
+    }, 10);
   }
 
   ajustarNovasInsercoes() {
@@ -642,20 +649,37 @@ export class TablePlanejamentoSemanalComponent implements OnChanges, OnInit {
   }
 
   hasEligibleDays(usuario: any, semana: any, campo: string): boolean {
-    return this.getDiasElegiveisSemana(usuario, semana, campo).length > 0;
+    if (!usuario || !semana || !campo) {
+      return false;
+    }
+    try {
+      return this.getDiasElegiveisSemana(usuario, semana, campo).length > 0;
+    } catch (error) {
+      console.warn('Erro em hasEligibleDays:', error);
+      return false;
+    }
   }
 
   getLimiteSemana(usuario: any, semana: any, campo: string): number {
-    const dias = this.getDiasElegiveisSemana(usuario, semana, campo);
-    return dias.reduce((soma, dia) => {
-      switch (campo) {
-        case 'jornadaHabitual': return soma + this.verificaLimiteJornada(usuario, dia);
-        case 'limiteHe': return soma + this.verificaLimiteHe(usuario, dia);
-        case 'limiteHeEstendido': return soma + this.verificaLimiteHeEstendido(usuario, dia);
-        case 'limiteHeJustificado': return soma + this.verificaLimiteHeJustificada(usuario, dia);
-        default: return soma;
-      }
-    }, 0);
+    if (!usuario || !semana || !campo) {
+      return 0;
+    }
+
+    try {
+      const dias = this.getDiasElegiveisSemana(usuario, semana, campo);
+      return dias.reduce((soma, dia) => {
+        switch (campo) {
+          case 'jornadaHabitual': return soma + this.verificaLimiteJornada(usuario, dia);
+          case 'limiteHe': return soma + this.verificaLimiteHe(usuario, dia);
+          case 'limiteHeEstendido': return soma + this.verificaLimiteHeEstendido(usuario, dia);
+          case 'limiteHeJustificado': return soma + this.verificaLimiteHeJustificada(usuario, dia);
+          default: return soma;
+        }
+      }, 0);
+    } catch (error) {
+      console.warn('Erro em getLimiteSemana:', error);
+      return 0;
+    }
   }
 
   // Distribui o valor semanal pelos dias elegíveis respeitando os limites diários
