@@ -89,8 +89,13 @@ export class TablePlanejamentoSemanalComponent implements OnChanges, OnInit {
       }
     }
 
-    if (changes['planejamento'] && !changes['planejamento'].firstChange) {
-      this.ajustarNovasInsercoes()
+    if (changes['planejamento'] && this.planejamento && this.planejamento['usuarioPlanejamento']) {
+      if (!changes['planejamento'].firstChange) {
+        this.ajustarNovasInsercoes()
+      }
+      if (this.dateRange.length > 0) {
+        this.generateTableData();
+      }
     }
   }
 
@@ -147,6 +152,11 @@ export class TablePlanejamentoSemanalComponent implements OnChanges, OnInit {
     }
 
     this.displayedColumns = ['empregado', ...this.semanas.map(s => s.numeroSemana.toString())];
+
+    // Gerar dados da tabela após definir o range de datas
+    if (this.planejamento && this.planejamento['usuarioPlanejamento']) {
+      this.generateTableData();
+    }
   }
 
   // Return Monday of the same week of the given date (or the date itself if it is Monday)
@@ -175,24 +185,32 @@ export class TablePlanejamentoSemanalComponent implements OnChanges, OnInit {
   }
 
   generateTableData() {
+    if (!this.planejamento || !this.planejamento['usuarioPlanejamento']) return;
+
     this.planejamento['usuarioPlanejamento'].forEach(usuario => {
       if (!usuario.planejamentos) {
         usuario.planejamentos = []
       }
+
+      // Limpar planejamentos existentes para o período atual
+      usuario.planejamentos = usuario.planejamentos.filter(p =>
+        !this.dateRange.includes(p.dataPlanejamento)
+      );
+
       this.dateRange.forEach(date => {
-        const planejamentoEdicaoIndex = usuario.planejamentosExistentes.findIndex(p => p.idPlanejamento == this.idPlanejamento && date == p.dtPlanejamento)
+        const planejamentoEdicaoIndex = usuario.planejamentosExistentes ?
+          usuario.planejamentosExistentes.findIndex(p => p.idPlanejamento == this.idPlanejamento && date == p.dtPlanejamento) : -1;
 
         if (planejamentoEdicaoIndex !== -1) {
           let planejamentoEdicao = usuario.planejamentosExistentes[planejamentoEdicaoIndex]
-          usuario.planejamentosExistentes.splice(planejamentoEdicaoIndex, 1)
-
 
           usuario.planejamentos.push({
             dataPlanejamento: date,
-            jornadaHabitual: planejamentoEdicao.jornadaHabitual,
-            limiteHe: planejamentoEdicao.limiteHoraExtra,
-            limiteHeEstendido: planejamentoEdicao.limiteHoraExtraEstendido,
-            limiteHeJustificado: planejamentoEdicao.limiteHoraExtraJustificada
+            jornadaHabitual: planejamentoEdicao.jornadaHabitual || 0,
+            limiteHe: planejamentoEdicao.limiteHoraExtra || 0,
+            limiteHeEstendido: planejamentoEdicao.limiteHoraExtraEstendido || 0,
+            limiteHeJustificado: planejamentoEdicao.limiteHoraExtraJustificada || 0,
+            alterado: false
           });
         } else {
           usuario.planejamentos.push({
@@ -200,7 +218,8 @@ export class TablePlanejamentoSemanalComponent implements OnChanges, OnInit {
             jornadaHabitual: 0,
             limiteHe: 0,
             limiteHeEstendido: 0,
-            limiteHeJustificado: 0
+            limiteHeJustificado: 0,
+            alterado: false
           });
         }
       })
@@ -265,9 +284,12 @@ export class TablePlanejamentoSemanalComponent implements OnChanges, OnInit {
         break;
     }
     let tooltip = 'Quantidade lançada em outros planejamentos - '
-    usuario.planejamentosExistentes.filter(itemExistente => itemExistente.dtPlanejamento === date).forEach(p => {
-      tooltip = `${tooltip} ${p.nomePlanejamento}: ${p[atributo]} | `
-    })
+
+    if (usuario.planejamentosExistentes && Array.isArray(usuario.planejamentosExistentes)) {
+      usuario.planejamentosExistentes.filter(itemExistente => itemExistente.dtPlanejamento === date).forEach(p => {
+        tooltip = `${tooltip} ${p.nomePlanejamento}: ${p[atributo] || 0} | `
+      })
+    }
 
     return tooltip
   }
@@ -279,21 +301,25 @@ export class TablePlanejamentoSemanalComponent implements OnChanges, OnInit {
       somaTotalColuna += 0
     }
     if (planejamento && planejamento.limiteHe && !isNaN(planejamento.limiteHe)) {
-      somaTotalColuna += parseFloat(planejamento.limiteHe) * parseFloat(usuario.valorDiurno)
+      somaTotalColuna += parseFloat(planejamento.limiteHe) * parseFloat(usuario.valorDiurno || 0)
     }
 
     if (planejamento && planejamento.limiteHeEstendido && !isNaN(planejamento.limiteHeEstendido)) {
-      somaTotalColuna += parseFloat(planejamento.limiteHeEstendido) * parseFloat(usuario.valorNoturno)
+      somaTotalColuna += parseFloat(planejamento.limiteHeEstendido) * parseFloat(usuario.valorNoturno || 0)
     }
 
     if (planejamento && planejamento.limiteHeJustificado && !isNaN(planejamento.limiteHeJustificado)) {
-      somaTotalColuna += parseFloat(planejamento.limiteHeJustificado) * parseFloat(usuario.valorNoturno)
+      somaTotalColuna += parseFloat(planejamento.limiteHeJustificado) * parseFloat(usuario.valorNoturno || 0)
     }
 
     return 'R$ ' + somaTotalColuna.toFixed(2).replace('.', ',')
   }
 
   getValueRow(type, usuario) {
+    if (!usuario.planejamentos || !Array.isArray(usuario.planejamentos)) {
+      return 'R$ 0,00'
+    }
+
     const somaJornadaHabitual = 0
     const somaLimiteHe = usuario.planejamentos.reduce((acc, objeto) => acc + (objeto.limiteHe ? parseFloat(objeto.limiteHe) : 0), 0)
     const somaLimiteHeEstendido = usuario.planejamentos.reduce((acc, objeto) => acc + (objeto.limiteHeEstendido ? parseFloat(objeto.limiteHeEstendido) : 0), 0)
@@ -311,22 +337,22 @@ export class TablePlanejamentoSemanalComponent implements OnChanges, OnInit {
     // }
 
     if (type == 2) {
-      totalType2 = somaLimiteHe * parseFloat(usuario.valorDiurno)
+      totalType2 = somaLimiteHe * parseFloat(usuario.valorDiurno || 0)
       return 'R$ ' + totalType2.toFixed(2).replace('.', ',')
     }
 
     if (type == 3) {
-      totalType3 = somaLimiteHeEstendido * parseFloat(usuario.valorNoturno)
+      totalType3 = somaLimiteHeEstendido * parseFloat(usuario.valorNoturno || 0)
       return 'R$ ' + totalType3.toFixed(2).replace('.', ',')
     }
 
     if (type == 4) {
-      totalType4 = somaLimiteHeJustificado * parseFloat(usuario.valorNoturno)
+      totalType4 = somaLimiteHeJustificado * parseFloat(usuario.valorNoturno || 0)
       return 'R$ ' + totalType4.toFixed(2).replace('.', ',')
     }
 
     if (type == 5) {
-      totalType5 = somaLimiteHe * parseFloat(usuario.valorDiurno) + somaLimiteHeEstendido * parseFloat(usuario.valorNoturno) + somaLimiteHeJustificado * parseFloat(usuario.valorNoturno)
+      totalType5 = somaLimiteHe * parseFloat(usuario.valorDiurno || 0) + somaLimiteHeEstendido * parseFloat(usuario.valorNoturno || 0) + somaLimiteHeJustificado * parseFloat(usuario.valorNoturno || 0)
       return 'R$ ' + totalType5.toFixed(2).replace('.', ',')
     }
 
@@ -359,15 +385,15 @@ export class TablePlanejamentoSemanalComponent implements OnChanges, OnInit {
 
   verificaLimiteJornada(usuario, date, disponivel = true) {
     let somaHoras = 0
-    const planejamentosExistentes = usuario.planejamentosExistentes
-    let valorJornadaHabitual = usuario.jornadaHabitual
+    const planejamentosExistentes = usuario.planejamentosExistentes || []
+    let valorJornadaHabitual = usuario.jornadaHabitual || 0
 
     if (planejamentosExistentes.length > 0) {
-      somaHoras = planejamentosExistentes.filter(itemExistente => itemExistente.dtPlanejamento === date && itemExistente.jornadaHabitual > 0).reduce((somatorio, item) => somatorio + item.jornadaHabitual, 0)
+      somaHoras = planejamentosExistentes.filter(itemExistente => itemExistente.dtPlanejamento === date && itemExistente.jornadaHabitual > 0).reduce((somatorio, item) => somatorio + (item.jornadaHabitual || 0), 0)
 
       if (somaHoras && somaHoras > 0) {
         let horasRestantes = disponivel ? valorJornadaHabitual - somaHoras : valorJornadaHabitual
-        return horasRestantes
+        return horasRestantes > 0 ? horasRestantes : 0
       } else {
         return valorJornadaHabitual
       }
@@ -378,15 +404,15 @@ export class TablePlanejamentoSemanalComponent implements OnChanges, OnInit {
 
   verificaLimiteHe(usuario, date, disponivel = true) {
     let somaHoras = 0
-    const planejamentosExistentes = usuario.planejamentosExistentes
-    let valorHe = usuario.limiteHe
+    const planejamentosExistentes = usuario.planejamentosExistentes || []
+    let valorHe = usuario.limiteHe || 0
 
     if (planejamentosExistentes.length > 0) {
-      somaHoras = planejamentosExistentes.filter(itemExistente => itemExistente.dtPlanejamento === date && itemExistente.limiteHoraExtra > 0).reduce((somatorio, item) => somatorio + item.limiteHoraExtra, 0)
+      somaHoras = planejamentosExistentes.filter(itemExistente => itemExistente.dtPlanejamento === date && itemExistente.limiteHoraExtra > 0).reduce((somatorio, item) => somatorio + (item.limiteHoraExtra || 0), 0)
 
       if (somaHoras && somaHoras > 0) {
         let horasRestantes = disponivel ? valorHe - somaHoras : valorHe
-        return horasRestantes
+        return horasRestantes > 0 ? horasRestantes : 0
       } else {
         return valorHe
       }
@@ -397,23 +423,22 @@ export class TablePlanejamentoSemanalComponent implements OnChanges, OnInit {
 
   verificaLimiteHeEstendido(usuario, date, disponivel = true) {
     let somaHoras = 0
-    const planejamentosExistentes = usuario.planejamentosExistentes
-    let valorHeEstendido = usuario.limiteHeEstendido
-
+    const planejamentosExistentes = usuario.planejamentosExistentes || []
+    let valorHeEstendido = usuario.limiteHeEstendido || 0
 
     const feriado = usuario && usuario.feriadosData ? usuario.feriadosData.find(itemExistente => itemExistente.dataFeriado === date) : null
     if (feriado) {
-      valorHeEstendido = valorHeEstendido - 2
+      valorHeEstendido = Math.max(0, valorHeEstendido - 2)
     } else if (new Date(date).getDay() == 0) {
-      valorHeEstendido = valorHeEstendido - 2
+      valorHeEstendido = Math.max(0, valorHeEstendido - 2)
     }
 
     if (planejamentosExistentes.length > 0) {
-      somaHoras = planejamentosExistentes.filter(itemExistente => itemExistente.dtPlanejamento === date && itemExistente.limiteHoraExtraEstendido > 0).reduce((somatorio, item) => somatorio + item.limiteHoraExtraEstendido, 0)
+      somaHoras = planejamentosExistentes.filter(itemExistente => itemExistente.dtPlanejamento === date && itemExistente.limiteHoraExtraEstendido > 0).reduce((somatorio, item) => somatorio + (item.limiteHoraExtraEstendido || 0), 0)
 
       if (somaHoras && somaHoras > 0) {
         let horasRestantes = disponivel ? valorHeEstendido - somaHoras : valorHeEstendido
-        return horasRestantes
+        return horasRestantes > 0 ? horasRestantes : 0
       } else {
         return valorHeEstendido
       }
@@ -424,15 +449,15 @@ export class TablePlanejamentoSemanalComponent implements OnChanges, OnInit {
 
   verificaLimiteHeJustificada(usuario, date, disponivel = true) {
     let somaHoras = 0
-    const planejamentosExistentes = usuario.planejamentosExistentes
-    let valorHeJustificado = usuario.limiteHeJustificado
+    const planejamentosExistentes = usuario.planejamentosExistentes || []
+    let valorHeJustificado = usuario.limiteHeJustificado || 0
 
     if (planejamentosExistentes.length > 0) {
-      somaHoras = planejamentosExistentes.filter(itemExistente => itemExistente.dtPlanejamento === date && itemExistente.limiteHoraExtraJustificada > 0).reduce((somatorio, item) => somatorio + item.limiteHoraExtraJustificada, 0)
+      somaHoras = planejamentosExistentes.filter(itemExistente => itemExistente.dtPlanejamento === date && itemExistente.limiteHoraExtraJustificada > 0).reduce((somatorio, item) => somatorio + (item.limiteHoraExtraJustificada || 0), 0)
 
       if (somaHoras && somaHoras > 0) {
         let horasRestantes = disponivel ? valorHeJustificado - somaHoras : valorHeJustificado
-        return horasRestantes
+        return horasRestantes > 0 ? horasRestantes : 0
       } else {
         return valorHeJustificado
       }
@@ -520,25 +545,33 @@ export class TablePlanejamentoSemanalComponent implements OnChanges, OnInit {
   }
 
   getSomaSemana(usuario, semana, campo) {
+    if (!usuario.planejamentos || !Array.isArray(usuario.planejamentos)) {
+      return 0
+    }
+
     return semana.dias.reduce((soma, dia) => {
       const planejamento = usuario.planejamentos.find(p => p.dataPlanejamento === dia);
-      return soma + (planejamento && planejamento[campo] ? planejamento[campo] : 0);
+      return soma + (planejamento && planejamento[campo] ? parseFloat(planejamento[campo]) || 0 : 0);
     }, 0);
   }
 
   getValorTotalSemana(usuario, semana) {
+    if (!usuario.planejamentos || !Array.isArray(usuario.planejamentos)) {
+      return '0,00'
+    }
+
     return semana.dias.reduce((total, dia) => {
       const planejamento = usuario.planejamentos.find(p => p.dataPlanejamento === dia);
       let valorTotal = 0;
 
       if (planejamento && planejamento.limiteHe) {
-        valorTotal += parseFloat(planejamento.limiteHe) * parseFloat(usuario.valorDiurno);
+        valorTotal += parseFloat(planejamento.limiteHe) * parseFloat(usuario.valorDiurno || 0);
       }
       if (planejamento && planejamento.limiteHeEstendido) {
-        valorTotal += parseFloat(planejamento.limiteHeEstendido) * parseFloat(usuario.valorNoturno);
+        valorTotal += parseFloat(planejamento.limiteHeEstendido) * parseFloat(usuario.valorNoturno || 0);
       }
       if (planejamento && planejamento.limiteHeJustificado) {
-        valorTotal += parseFloat(planejamento.limiteHeJustificado) * parseFloat(usuario.valorNoturno);
+        valorTotal += parseFloat(planejamento.limiteHeJustificado) * parseFloat(usuario.valorNoturno || 0);
       }
 
       return total + valorTotal;
