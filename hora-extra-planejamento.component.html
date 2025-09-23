@@ -39,6 +39,18 @@
   </div>
 
   <br>
+
+  <!-- <div class="app-planejamento-totalizadores"
+    *ngIf="planejamento && planejamento.usuarioPlanejamento && planejamento.usuarioPlanejamento.length > 0"> -->
+    <!-- <app-table-planejamento [podeAprovarGestor]="podeAprovarGestor"
+      [podeAprovarSuperintendente]="podeAprovarSuperintendente" style="width: 80%" [planejamento]="planejamento"
+      [formGroup]="formGroup" (empregadosChanged)="empregadosChanged($event)"
+      (planejamentoChanged)="planejamentoChanged()" (valueChanged)="teveAlteracao = true">
+    </app-table-planejamento> -->
+
+  
+
+  <!-- </div> -->
   <mat-tab-group >
     <mat-tab label="Planejamento Diário">
       <div class="app-planejamento-totalizadores"
@@ -79,9 +91,10 @@
       </div>
     </mat-tab>
   </mat-tab-group>
-
-
-
+  <div class="app-planejamento-totalizadores empty-table"
+    *ngIf="!planejamento.usuarioPlanejamento || planejamento.usuarioPlanejamento.length == 0">
+    Nenhum empregado selecionado.
+  </div>
 
   <br>
 
