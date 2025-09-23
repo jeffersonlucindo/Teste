@@ -1,0 +1,135 @@
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #F7FAFA;
+  border-radius: 4px;
+}
+
+th, td {
+  padding: 8px;
+  text-align: center;
+  vertical-align: bottom;
+  white-space: nowrap;
+  min-width: 100px;
+  padding-left: 1rem;
+}
+
+thead th {
+  background-color: #f2f2f2;
+  position: sticky;
+  top: 0;
+  padding-left: 1rem;
+}
+
+.overflow {
+  overflow-x: scroll;
+}
+
+.content {
+  overflow-x: scroll;
+  overflow-y: scroll;
+  max-height: 500px;
+  background: #F7FAFA;
+  display: flex;
+  padding: 16px;
+  border-radius: 4px;
+}
+
+div[style="overflow-x: auto;"] {
+  max-width: 100%;
+}
+
+.table-info-limite-description {
+  min-width: 12rem;
+  border-bottom: 1px solid;
+  min-height: 1.5rem;
+  padding-bottom: 0.2rem;
+  padding-top: 0.2rem;
+  text-align: justify;
+}
+
+.table-info {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  min-width: 12rem;
+  border-bottom: 1px solid;
+  min-height: 1.5rem;
+  padding-bottom: 0.2rem;
+  padding-top: 0.2rem;
+}
+
+.table-info span, .table-info-limite-description span {
+  font-weight: 500;
+  font-size: 0.8rem;
+}
+
+.table-info-limite {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid;
+  padding-left: 1rem;
+  min-height: 1.5rem;
+  padding-bottom: 0.2rem;
+  padding-top: 0.2rem;
+}
+
+.table-info-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid transparent;
+  padding-left: 1rem;
+  min-height: 1.5rem;
+}
+
+.table-info-limite input {
+  height: 1.3rem;
+  border: 1px solid #000;
+  border-radius: 4px;
+}
+
+.table-info-limite span {
+  font-weight: 500;
+  font-size: small;
+}
+
+.table-name {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.2rem;
+  padding-top: 0.2rem;
+}
+
+.table-name span {
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+
+.table-info-somatorios {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  min-width: 12rem;
+  border-bottom: 1px solid;
+  min-height: 1.5rem;
+  padding-bottom: 0.2rem;
+  padding-top: 0.2rem;
+}
+
+.table-info-somatorios span {
+  font-weight: 600;
+  font-size: small;
+  margin-left: 0.5rem;
+}
+
+.deleteButton {
+  color: #d40000;
+}
+.hourglassFull{
+  color: #0277bd;
+}
