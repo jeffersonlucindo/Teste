@@ -1,0 +1,185 @@
+<form [formGroup]="formGroup">
+  <!-- NOME DO PLANEJAMENTO -->
+  <mat-form-field [ngStyle]="{'width': '20%'}">
+    <input matInput #sigla placeholder="Nome do Planejamento" formControlName="nomePlanejamento" maxlength="45"
+      required>
+    <mat-hint align="end">{{formGroup.controls['nomePlanejamento'].value?.length || 0}}/45</mat-hint>
+  </mat-form-field>
+
+  <!-- DESCRIÇÃO DO PLANEJAMENTO -->
+  <mat-form-field [ngStyle]="{'width': '40%'}">
+    <input matInput #sigla placeholder="Descrição" formControlName="descricao" maxlength="400" required>
+    <mat-hint align="end">{{formGroup.controls['descricao'].value?.length || 0}}/400</mat-hint>
+  </mat-form-field>
+  <br>
+
+  <!-- DATA INICIAL -->
+  <mat-form-field color="primary">
+    <input matInput id="dataInicio" [matDatepicker]="pickerDtInicioPlanejamento" placeholder="Data de Inicío"
+      formControlName="dataInicio" appDate [appDateFormGroup]="formGroup" (dateInput)="onchangeDtInicial($event)"
+      required>
+    <mat-datepicker-toggle matSuffix [for]="pickerDtInicioPlanejamento"></mat-datepicker-toggle>
+    <mat-datepicker #pickerDtInicioPlanejamento>
+    </mat-datepicker>
+  </mat-form-field>
+
+  <!-- DATA FIM -->
+  <mat-form-field color="primary">
+    <input matInput id="dataEncerramento" [matDatepicker]="pickerEncerramentoPlanejamento"
+      placeholder="Data de Encerramento" formControlName="dataEncerramento" appDate [appDateFormGroup]="formGroup"
+      [min]="minDate" (dateInput)="onchangeDtFim($event)" required>
+    <mat-datepicker-toggle matSuffix [for]="pickerEncerramentoPlanejamento"></mat-datepicker-toggle>
+    <mat-datepicker #pickerEncerramentoPlanejamento>
+    </mat-datepicker>
+  </mat-form-field>
+
+  <div class="app-planejamento-totalizadores" style="margin-top: 4rem;">
+    <app-planejamento-totalizadores style="width: 80%" [planejamento]="planejamento">
+    </app-planejamento-totalizadores>
+  </div>
+
+  <br>
+  <mat-tab-group >
+    <mat-tab label="Planejamento Diário">
+      <div class="app-planejamento-totalizadores"
+        *ngIf="planejamento && planejamento.usuarioPlanejamento && planejamento.usuarioPlanejamento.length > 0">
+        <app-table-planejamento
+          style="width: 80%"
+          [podeAprovarGestor]="podeAprovarGestor"
+          [podeAprovarSuperintendente]="podeAprovarSuperintendente"
+          [planejamento]="planejamento"
+          [formGroup]="formGroup"
+          (empregadosChanged)="empregadosChanged($event)"
+          (planejamentoChanged)="planejamentoChanged()"
+          (valueChanged)="teveAlteracao = true">
+        </app-table-planejamento>
+      </div>
+      <div class="app-planejamento-totalizadores empty-table"
+        *ngIf="!planejamento.usuarioPlanejamento || planejamento.usuarioPlanejamento.length == 0">
+        Nenhum empregado selecionado.
+      </div>
+    </mat-tab>
+    <mat-tab label="Planejamento Semanal">
+      <div class="app-planejamento-totalizadores"
+        *ngIf="planejamento && planejamento.usuarioPlanejamento && planejamento.usuarioPlanejamento.length > 0">
+        <app-table-planejamento-semanal
+          style="width: 80%"
+          [podeAprovarGestor]="podeAprovarGestor"
+          [podeAprovarSuperintendente]="podeAprovarSuperintendente"
+          [planejamento]="planejamento"
+          [formGroup]="formGroup"
+          (empregadosChanged)="empregadosChanged($event)"
+          (planejamentoChanged)="planejamentoChanged()"
+          (valueChanged)="teveAlteracao = true">
+        </app-table-planejamento-semanal>
+      </div>
+      <div class="app-planejamento-totalizadores empty-table"
+        *ngIf="!planejamento.usuarioPlanejamento || planejamento.usuarioPlanejamento.length == 0">
+        Nenhum empregado selecionado.
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+
+
+
+
+  <br>
+
+  <div class="app-planejamento-totalizadores"
+    *ngIf="planejamento && planejamento.usuarioPlanejamento && planejamento.usuarioPlanejamento.length > 0">
+    <app-planejamento-grid-somatorios [podeAprovarGestor]="podeAprovarGestor"
+      [podeAprovarSuperintendente]="podeAprovarSuperintendente" style="width: 80%" [planejamento]="planejamento"
+      (onChangeHoraJustificada)="onChangeHoraJustificada($event)">
+
+    </app-planejamento-grid-somatorios>
+  </div>
+  <br>
+  <div [style.display]="'none'" class="app-planejamento-totalizadores" style="margin-bottom: 1rem">
+    <div class="content-observation mat-elevation-z2">
+      <span>Observação HE Justificada</span>
+      <textarea (change)="onObsChange($event)" maxlength="300" formControlName="observacao"></textarea>
+
+      <div style="margin-top: 15px;"
+        *ngIf="(podeAprovarGestor && status ==  situacaoPlanejamento.PENDENTE_GESTOR )||( podeAprovarSuperintendente &&  status ==  situacaoPlanejamento.PENDENTE_SUPERINTENDENTE)">
+
+        <mat-checkbox [ngModelOptions]="{standalone: true}" [(ngModel)]="confirmacaoGestorSuperintendente"
+          color="primary"> Afirmo que
+          as justificativas de
+          HE Extra além dos quantitativos permitidos estão em conformidade com as exceções previstas em lei.
+        </mat-checkbox>
+      </div>
+    </div>
+
+  </div>
+  <div
+    *ngIf="routeCall == ROTA_SUPERINTENDENTE && podeAprovarSuperintendente && status ==  situacaoPlanejamento.PENDENTE_SUPERINTENDENTE"
+    class="app-planejamento-totalizadores ">
+    <div class="content-observation mat-elevation-z2">
+      <span>Justificativa de desautorização</span>
+      <textarea (change)="onJustificativaDesautorizacaoChange($event)"
+        formControlName="justificativaDesautorizacao"></textarea>
+    </div>
+  </div>
+  <br>
+
+  <div class="botoes-container">
+    <button mat-raised-button focus [disabled]="!podeAbrirModalSelecao()" color="primary"
+      (click)="openSelecaoEmpregados()" type="submit">
+      <mat-icon>group_add</mat-icon>
+      Incluir novos empregado
+    </button>
+
+    <button mat-raised-button focus color="warn" type="submit" (click)="excluirEmpregadosSelecionados()"
+      [disabled]="empregadosSelecionados.length == 0">
+      <mat-icon>delete</mat-icon>
+      Excluir do planejamento
+    </button>
+  </div>
+  <div style=" justify-content: space-around;display: flex;">
+    <div *ngIf="exibirBotaoAutorizacaoDesautorizacao" class="app-planejamento-button">
+      <button [disabled]="teveAlteracao" mat-raised-button focus color="primary" (click)="autorizar()"
+        type="submit">
+        <mat-icon>check_circle</mat-icon>
+        Autorizar
+      </button>
+      <button [disabled]="teveAlteracao || !justificativaDesautorizacao" mat-raised-button focus color="warn"
+        (click)="desautorizar()" type="submit">
+        <mat-icon>clear</mat-icon>
+        Desautorizar
+      </button>
+    </div>
+
+    <div *ngIf="exibirBotaoAprovacaoReprovacao" class="app-planejamento-button">
+      <button [disabled]="teveAlteracao" mat-raised-button focus color="primary" (click)="aprovar()"
+        type="submit">
+        <mat-icon>check_circle</mat-icon>
+        Aprovar
+      </button>
+      <button [disabled]="teveAlteracao" mat-raised-button focus color="warn" (click)="reprovar()"
+        type="submit">
+        <mat-icon>clear</mat-icon>
+        Reprovar
+      </button>
+    </div>
+
+    <div class="app-planejamento-button">
+      <button mat-raised-button focus color="primary" (click)="save()" type="submit"
+        [disabled]="!teveAlteracao || saveIsInvalid()">
+        <mat-icon>save</mat-icon>
+        Salvar
+      </button>
+
+      <button *ngIf="exibirBotaoEnviarPlanejamento" mat-raised-button focus color="primary" (click)="send()"
+        type="submit" [disabled]="teveAlteracao || saveIsInvalid()">
+
+        <mat-icon>save</mat-icon>
+        Efetivar Planejamento
+      </button>
+
+      <button mat-raised-button focus (click)="back()">
+        <mat-icon>replay</mat-icon>
+        Voltar
+      </button>
+    </div>
+  </div>
+</form>
