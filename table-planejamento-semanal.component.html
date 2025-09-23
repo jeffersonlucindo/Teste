@@ -3,7 +3,7 @@
     <mat-icon>brush</mat-icon>
   </button>
 
-  <table mat-table [dataSource]="planejamento['usuarioPlanejamento']" [trackByFn]="trackByUsuario" *ngIf="dadosProntos">
+  <table mat-table [dataSource]="planejamento['usuarioPlanejamento']">
     <!-- Empregado Column -->
     <ng-container matColumnDef="empregado">
       <th mat-header-cell *matHeaderCellDef>
@@ -155,8 +155,4 @@
     <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
   </table>
 
-  <!-- Loading message -->
-  <div *ngIf="!dadosProntos" style="padding: 20px; text-align: center;">
-    <span>Carregando planejamento semanal...</span>
-  </div>
 </div>

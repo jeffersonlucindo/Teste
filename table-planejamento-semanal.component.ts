@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnInit, OnChanges, SimpleChanges, ChangeDetectorRef } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges } from '@angular/core';
 import { FormGroup } from '@angular/forms';
 import { MatDialog } from '@angular/material';
 import { Router } from '@angular/router';
@@ -46,7 +46,7 @@ interface SemanaPorEmpregado {
   templateUrl: './table-planejamento-semanal.component.html',
   styleUrls: ['./table-planejamento-semanal.component.css']
 })
-export class TablePlanejamentoSemanalComponent implements OnChanges, OnInit {
+export class TablePlanejamentoSemanalComponent implements OnChanges {
 
   @Input() formGroup: FormGroup;
   @Input() podeAprovarGestor: boolean;
@@ -55,7 +55,7 @@ export class TablePlanejamentoSemanalComponent implements OnChanges, OnInit {
   @Output() planejamentoChanged = new EventEmitter();
   @Output() valueChanged = new EventEmitter();
 
-  routeCall: string;
+  routeCall: string = this.router.url.replace('/', '');
 
   dateRange: string[] = [];
   displayedColumns: string[] = ['empregado', ...this.dateRange];
@@ -70,36 +70,12 @@ export class TablePlanejamentoSemanalComponent implements OnChanges, OnInit {
   ROTA_GESTOR = 'nova-hora-extra-gestor'
   ROTA_SUPERINTENDENTE = 'nova-hora-extra-superintendente'
 
-  // Flag para controlar emissões durante inicialização
-  private isInitializing = true;
-
-  // TrackBy functions para melhorar performance
-  trackByUsuario = (index: number, item: any) => item.empregadoId || index;
-  trackBySemana = (index: number, item: any) => item.numeroSemana || index;
-
-  // Getter para verificar se os dados estão prontos
-  get dadosProntos(): boolean {
-    return !this.isInitializing &&
-           this.planejamento &&
-           this.planejamento['usuarioPlanejamento'] &&
-           this.dateRange.length > 0 &&
-           this.semanas.length > 0;
-  }
-
   constructor(private dialog: MatDialog,
-    public router: Router,
-    private cdr: ChangeDetectorRef) { }
+    public router: Router) { }
 
   empregadosSelecionados = []
 
-  ngOnInit() {
-    this.routeCall = this.router.url.replace('/', '');
-  }
-
   ngOnChanges(changes: SimpleChanges) {
-    // Marcar como inicializando durante mudanças
-    this.isInitializing = true;
-
     if (changes['formGroup'] && this.formGroup) {
       this.idPlanejamento = this.formGroup.value.id
       let dtini = this.formGroup.value['dataInicio']
@@ -109,23 +85,12 @@ export class TablePlanejamentoSemanalComponent implements OnChanges, OnInit {
       }
     }
 
-    if (changes['planejamento'] && this.planejamento && this.planejamento['usuarioPlanejamento']) {
-      if (!changes['planejamento'].firstChange) {
-        this.ajustarNovasInsercoes()
-      }
-      if (this.dateRange.length > 0) {
-        this.generateTableData();
-      }
+    if (changes['planejamento'] && !changes['planejamento'].firstChange) {
+      this.ajustarNovasInsercoes()
     }
-
-    // Finalizar inicialização após processamento
-    setTimeout(() => {
-      this.isInitializing = false;
-    }, 10);
   }
 
   ajustarNovasInsercoes() {
-    if (!this.planejamento || !this.planejamento['usuarioPlanejamento']) return;
     this.planejamento['usuarioPlanejamento'].forEach(usuario => {
       if (!usuario.planejamentos || usuario.planejamentos.length == 0) {
         usuario.planejamentos = this.dateRange.map(date => ({
@@ -138,12 +103,7 @@ export class TablePlanejamentoSemanalComponent implements OnChanges, OnInit {
       }
     });
 
-    // Só emitir se não estiver inicializando
-    if (!this.isInitializing) {
-      setTimeout(() => {
-        this.planejamentoChanged.emit()
-      }, 0);
-    }
+    this.planejamentoChanged.emit()
   }
 
   semanas: { numeroSemana: number; dataInicio: Date; dataFim: Date; dias: string[] }[] = [];
@@ -182,11 +142,7 @@ export class TablePlanejamentoSemanalComponent implements OnChanges, OnInit {
     }
 
     this.displayedColumns = ['empregado', ...this.semanas.map(s => s.numeroSemana.toString())];
-
-    // Gerar dados da tabela após definir o range de datas
-    if (this.planejamento && this.planejamento['usuarioPlanejamento']) {
-      this.generateTableData();
-    }
+    this.generateTableData();
   }
 
   // Return Monday of the same week of the given date (or the date itself if it is Monday)
@@ -215,32 +171,23 @@ export class TablePlanejamentoSemanalComponent implements OnChanges, OnInit {
   }
 
   generateTableData() {
-    if (!this.planejamento || !this.planejamento['usuarioPlanejamento']) return;
-
     this.planejamento['usuarioPlanejamento'].forEach(usuario => {
       if (!usuario.planejamentos) {
         usuario.planejamentos = []
       }
-
-      // Limpar planejamentos existentes para o período atual
-      usuario.planejamentos = usuario.planejamentos.filter(p =>
-        !this.dateRange.includes(p.dataPlanejamento)
-      );
-
       this.dateRange.forEach(date => {
-        const planejamentoEdicaoIndex = usuario.planejamentosExistentes ?
-          usuario.planejamentosExistentes.findIndex(p => p.idPlanejamento == this.idPlanejamento && date == p.dtPlanejamento) : -1;
+        const planejamentoEdicaoIndex = usuario.planejamentosExistentes.findIndex(p => p.idPlanejamento == this.idPlanejamento && date == p.dtPlanejamento)
 
         if (planejamentoEdicaoIndex !== -1) {
           let planejamentoEdicao = usuario.planejamentosExistentes[planejamentoEdicaoIndex]
+          usuario.planejamentosExistentes.splice(planejamentoEdicaoIndex, 1)
 
           usuario.planejamentos.push({
             dataPlanejamento: date,
-            jornadaHabitual: planejamentoEdicao.jornadaHabitual || 0,
-            limiteHe: planejamentoEdicao.limiteHoraExtra || 0,
-            limiteHeEstendido: planejamentoEdicao.limiteHoraExtraEstendido || 0,
-            limiteHeJustificado: planejamentoEdicao.limiteHoraExtraJustificada || 0,
-            alterado: false
+            jornadaHabitual: planejamentoEdicao.jornadaHabitual,
+            limiteHe: planejamentoEdicao.limiteHoraExtra,
+            limiteHeEstendido: planejamentoEdicao.limiteHoraExtraEstendido,
+            limiteHeJustificado: planejamentoEdicao.limiteHoraExtraJustificada
           });
         } else {
           usuario.planejamentos.push({
@@ -248,19 +195,13 @@ export class TablePlanejamentoSemanalComponent implements OnChanges, OnInit {
             jornadaHabitual: 0,
             limiteHe: 0,
             limiteHeEstendido: 0,
-            limiteHeJustificado: 0,
-            alterado: false
+            limiteHeJustificado: 0
           });
         }
       })
     });
 
-    // Só emitir se não estiver inicializando
-    if (!this.isInitializing) {
-      setTimeout(() => {
-        this.planejamentoChanged.emit()
-      }, 0);
-    }
+    this.planejamentoChanged.emit()
   }
 
   getPlanejamento(usuario, date, campo) {
@@ -300,10 +241,7 @@ export class TablePlanejamentoSemanalComponent implements OnChanges, OnInit {
       planejamento.alterado = true
     }
 
-    // Usar setTimeout para evitar ExpressionChangedAfterItHasBeenCheckedError
-    setTimeout(() => {
-      this.valueChanged.emit()
-    }, 0);
+    this.valueChanged.emit()
   }
 
   getTooltipOutrosPlanejamentos(usuario, date, campo) {
@@ -565,10 +503,7 @@ export class TablePlanejamentoSemanalComponent implements OnChanges, OnInit {
       })
     })
 
-    // Usar setTimeout para evitar ExpressionChangedAfterItHasBeenCheckedError
-    setTimeout(() => {
-      this.valueChanged.emit()
-    }, 0);
+    this.valueChanged.emit()
   }
 
   arredondarNumeros(numero: number) {
@@ -588,50 +523,29 @@ export class TablePlanejamentoSemanalComponent implements OnChanges, OnInit {
   }
 
   getSomaSemana(usuario, semana, campo) {
-    if (!usuario || !usuario.planejamentos || !Array.isArray(usuario.planejamentos) || !semana || !semana.dias) {
-      return 0
-    }
-
-    try {
-      return semana.dias.reduce((soma, dia) => {
-        const planejamento = usuario.planejamentos.find(p => p.dataPlanejamento === dia);
-        const valor = planejamento && planejamento[campo] ? parseFloat(planejamento[campo]) || 0 : 0;
-        return soma + valor;
-      }, 0);
-    } catch (error) {
-      console.warn('Erro em getSomaSemana:', error);
-      return 0;
-    }
+    return semana.dias.reduce((soma, dia) => {
+      const planejamento = usuario.planejamentos.find(p => p.dataPlanejamento === dia);
+      return soma + (planejamento && planejamento[campo] ? planejamento[campo] : 0);
+    }, 0);
   }
 
   getValorTotalSemana(usuario, semana) {
-    if (!usuario || !usuario.planejamentos || !Array.isArray(usuario.planejamentos) || !semana || !semana.dias) {
-      return '0,00'
-    }
+    return semana.dias.reduce((total, dia) => {
+      const planejamento = usuario.planejamentos.find(p => p.dataPlanejamento === dia);
+      let valorTotal = 0;
 
-    try {
-      const total = semana.dias.reduce((total, dia) => {
-        const planejamento = usuario.planejamentos.find(p => p.dataPlanejamento === dia);
-        let valorTotal = 0;
+      if (planejamento && planejamento.limiteHe) {
+        valorTotal += parseFloat(planejamento.limiteHe) * parseFloat(usuario.valorDiurno);
+      }
+      if (planejamento && planejamento.limiteHeEstendido) {
+        valorTotal += parseFloat(planejamento.limiteHeEstendido) * parseFloat(usuario.valorNoturno);
+      }
+      if (planejamento && planejamento.limiteHeJustificado) {
+        valorTotal += parseFloat(planejamento.limiteHeJustificado) * parseFloat(usuario.valorNoturno);
+      }
 
-        if (planejamento && planejamento.limiteHe) {
-          valorTotal += parseFloat(planejamento.limiteHe) * parseFloat(usuario.valorDiurno || 0);
-        }
-        if (planejamento && planejamento.limiteHeEstendido) {
-          valorTotal += parseFloat(planejamento.limiteHeEstendido) * parseFloat(usuario.valorNoturno || 0);
-        }
-        if (planejamento && planejamento.limiteHeJustificado) {
-          valorTotal += parseFloat(planejamento.limiteHeJustificado) * parseFloat(usuario.valorNoturno || 0);
-        }
-
-        return total + valorTotal;
-      }, 0);
-
-      return total.toFixed(2).replace('.', ',');
-    } catch (error) {
-      console.warn('Erro em getValorTotalSemana:', error);
-      return '0,00';
-    }
+      return total + valorTotal;
+    }, 0).toFixed(2).replace('.', ',');
   }
 
   // Dias elegíveis por campo (replica as regras do diário)
@@ -649,37 +563,20 @@ export class TablePlanejamentoSemanalComponent implements OnChanges, OnInit {
   }
 
   hasEligibleDays(usuario: any, semana: any, campo: string): boolean {
-    if (!usuario || !semana || !campo) {
-      return false;
-    }
-    try {
-      return this.getDiasElegiveisSemana(usuario, semana, campo).length > 0;
-    } catch (error) {
-      console.warn('Erro em hasEligibleDays:', error);
-      return false;
-    }
+    return this.getDiasElegiveisSemana(usuario, semana, campo).length > 0;
   }
 
   getLimiteSemana(usuario: any, semana: any, campo: string): number {
-    if (!usuario || !semana || !campo) {
-      return 0;
-    }
-
-    try {
-      const dias = this.getDiasElegiveisSemana(usuario, semana, campo);
-      return dias.reduce((soma, dia) => {
-        switch (campo) {
-          case 'jornadaHabitual': return soma + this.verificaLimiteJornada(usuario, dia);
-          case 'limiteHe': return soma + this.verificaLimiteHe(usuario, dia);
-          case 'limiteHeEstendido': return soma + this.verificaLimiteHeEstendido(usuario, dia);
-          case 'limiteHeJustificado': return soma + this.verificaLimiteHeJustificada(usuario, dia);
-          default: return soma;
-        }
-      }, 0);
-    } catch (error) {
-      console.warn('Erro em getLimiteSemana:', error);
-      return 0;
-    }
+    const dias = this.getDiasElegiveisSemana(usuario, semana, campo);
+    return dias.reduce((soma, dia) => {
+      switch (campo) {
+        case 'jornadaHabitual': return soma + this.verificaLimiteJornada(usuario, dia);
+        case 'limiteHe': return soma + this.verificaLimiteHe(usuario, dia);
+        case 'limiteHeEstendido': return soma + this.verificaLimiteHeEstendido(usuario, dia);
+        case 'limiteHeJustificado': return soma + this.verificaLimiteHeJustificada(usuario, dia);
+        default: return soma;
+      }
+    }, 0);
   }
 
   // Distribui o valor semanal pelos dias elegíveis respeitando os limites diários
@@ -723,11 +620,8 @@ export class TablePlanejamentoSemanalComponent implements OnChanges, OnInit {
       restante -= alocar;
     }
 
-    // Usar setTimeout para evitar ExpressionChangedAfterItHasBeenCheckedError
-    setTimeout(() => {
-      this.valueChanged.emit();
-      this.planejamentoChanged.emit();
-    }, 0);
+    this.valueChanged.emit();
+    this.planejamentoChanged.emit();
   }
 
   // Tooltip agregado para a semana quando não há disponibilidade por outros planejamentos
