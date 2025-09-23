@@ -1,0 +1,125 @@
+<div class="content mat-elevation-z2">
+  <button style="position: absolute; right: 7%;" mat-fab color="primary" (click)="openParametrizacao()">
+    <mat-icon>brush</mat-icon>
+  </button>
+
+  <table mat-table [dataSource]="planejamento['usuarioPlanejamento']">
+    <!-- Empregado Column -->
+    <ng-container matColumnDef="empregado">
+      <th mat-header-cell *matHeaderCellDef>
+        <div class="table-info-head">
+          <span>Empregado</span>
+        </div>
+      </th>
+      <td mat-cell *matCellDef="let usuario">
+        <div>
+          <div class="table-name">
+            <mat-checkbox [(ngModel)]="usuario.selecionado" (change)='onChange(usuario)'></mat-checkbox>
+            <span> {{ usuario.nome }} </span>
+            <button *ngIf="usuario.planejamentosExistentes && usuario.planejamentosExistentes.length > 0"
+              mat-icon-button class="hourglassFull">
+              <mat-icon>hourglass_full</mat-icon>
+            </button>
+          </div>
+          <div class="table-info-limite-description">
+            <span>Jornada Habitual</span>
+            <div style="font-weight: 700;  font-size: 12px;">máximo (6h técnico) - (8h - gerencial)</div>
+          </div>
+          <div class="table-info-limite-description">
+            <span>Limite HE</span>
+            <div style="font-weight: 700;  font-size: 12px;">máximo 2h</div>
+          </div>
+          <div class="table-info-limite-description">
+            <span>Limite HE - Estendido</span>
+            <div style="font-weight: 700;  font-size: 12px;">sábado (habitual + 2) - domingo e feriado (habitual)</div>
+          </div>
+          <div
+            *ngIf="(podeAprovarGestor && routeCall == ROTA_GESTOR) || (podeAprovarSuperintendente && routeCall == ROTA_SUPERINTENDENTE) "
+            class="table-info">
+            <span>Limite HE - Justificada</span>
+          </div>
+          <div class="table-info">
+            <span>Valor Total HE</span>
+          </div>
+        </div>
+      </td>
+    </ng-container>
+
+    <!-- Dynamic Date Columns -->
+    <ng-container *ngFor="let date of dateRange; let i =index" [matColumnDef]="date">
+      <th mat-header-cell *matHeaderCellDef>
+        <div class="table-info-head">
+          <span>{{ formatDateToTable(date) }}</span>
+        </div>
+      </th>
+      <td mat-cell *matCellDef="let usuario">
+        <div class="table-info-limite" *ngIf="usuario.planejamentos && usuario.planejamentos.length > 0">
+          <input matInput type="number" [min]="0" [max]="verificaLimiteJornada(usuario, date)"
+            [disabled]="verificaFeriadoOuFDS(usuario, date) || verificaLimiteJornada(usuario, date) <= 0"
+            [matTooltip]="verificaFeriadoOuFDS(usuario, date) ? 'So pode realizar esse planejamento em dias úteis!' : verificaLimiteJornada(usuario, date) > 0 ? '' : getTooltipOutrosPlanejamentos(usuario, date,  'jornadaHabitual')"
+            matTooltipPosition="above" [(ngModel)]="usuario.planejamentos[i].jornadaHabitual"
+            (change)="setPlanejamento(usuario, date, 'jornadaHabitual', $event.target.value)" />
+        </div>
+        <div class="table-info-limite" *ngIf="usuario.planejamentos && usuario.planejamentos.length > 0">
+          <input matInput type="number" [min]="0" [max]="verificaLimiteHe(usuario, date)"
+            [disabled]="verificaFeriadoOuFDS(usuario, date) || verificaLimiteHe(usuario, date) <= 0"
+            [matTooltip]="verificaFeriadoOuFDS(usuario, date) ? 'So pode realizar esse planejamento em dias úteis!' : verificaLimiteHe(usuario, date) > 0 ? '' : getTooltipOutrosPlanejamentos(usuario, date,  'limiteHe')"
+            matTooltipPosition="above" [(ngModel)]="usuario.planejamentos[i].limiteHe"
+            (change)="setPlanejamento(usuario, date, 'limiteHe', $event.target.value)" />
+        </div>
+        <div class="table-info-limite" *ngIf="usuario.planejamentos && usuario.planejamentos.length > 0">
+          <input matInput type="number" [min]="0" [max]="verificaLimiteHeEstendido(usuario, date)"
+            [disabled]="!verificaFeriadoOuFDS(usuario, date) || verificaLimiteHeEstendido(usuario, date) <= 0"
+            [matTooltip]="!verificaFeriadoOuFDS(usuario, date) ? 'So pode realizar esse planejamento em finas de semana ou feriados!' : verificaLimiteHeEstendido(usuario, date) > 0 ? '' : getTooltipOutrosPlanejamentos(usuario, date,  'limiteHeEstendido')"
+            matTooltipPosition="above" [(ngModel)]="usuario.planejamentos[i].limiteHeEstendido"
+            (change)="setPlanejamento(usuario, date, 'limiteHeEstendido', $event.target.value)" />
+        </div>
+        <div class="table-info-limite"
+          *ngIf="((podeAprovarGestor && routeCall == ROTA_GESTOR) || (podeAprovarSuperintendente && routeCall == ROTA_SUPERINTENDENTE) ) && usuario.planejamentos && usuario.planejamentos.length > 0">
+          <input matInput type="number" [min]="0" [max]="verificaLimiteHeJustificada(usuario, date)" [disabled]="true"
+            [matTooltip]="verificaLimiteHeJustificada(usuario, date) > 0 ? '' : getTooltipOutrosPlanejamentos(usuario, date,  'limiteHeJustificado')"
+            matTooltipPosition="above" [(ngModel)]="usuario.planejamentos[i].limiteHeJustificado"
+            (change)="setPlanejamento(usuario, date, 'limiteHeJustificado', $event.target.value)" />
+        </div>
+        <div class="table-info-limite" *ngIf="usuario.planejamentos && usuario.planejamentos.length > 0">
+          <span>{{getValueColun(usuario, date)}}</span>
+        </div>
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="totalRow">
+      <th mat-header-cell *matHeaderCellDef>
+        <div class="table-info-head">
+          <span></span>
+        </div>
+      </th>
+
+      <td mat-cell *matCellDef="let usuario">
+        <div class="table-name">
+          <span></span>
+        </div>
+        <div class="table-info-somatorios">
+          <span>- -</span>
+        </div>
+        <div class="table-info-somatorios">
+          <span>{{ getValueRow(2, usuario) }}</span>
+        </div>
+        <div class="table-info-somatorios">
+          <span>{{ getValueRow(3, usuario) }}</span>
+        </div>
+        <div
+          *ngIf="(podeAprovarGestor && routeCall == ROTA_GESTOR) || (podeAprovarSuperintendente && routeCall == ROTA_SUPERINTENDENTE)"
+          class="table-info-somatorios">
+          <span>{{ getValueRow(4, usuario) }}</span>
+        </div>
+        <div class="table-info-somatorios">
+          <span>{{ getValueRow(5, usuario) }}</span>
+        </div>
+      </td>
+    </ng-container>
+
+    <!-- Header and Row Declarations -->
+    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+    <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+  </table>
+</div>
