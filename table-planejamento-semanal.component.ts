@@ -113,7 +113,10 @@ export class TablePlanejamentoSemanalComponent implements OnChanges, OnInit {
       }
     });
 
-    this.planejamentoChanged.emit()
+    // Usar setTimeout para evitar ExpressionChangedAfterItHasBeenCheckedError
+    setTimeout(() => {
+      this.planejamentoChanged.emit()
+    }, 0);
   }
 
   semanas: { numeroSemana: number; dataInicio: Date; dataFim: Date; dias: string[] }[] = [];
@@ -225,7 +228,10 @@ export class TablePlanejamentoSemanalComponent implements OnChanges, OnInit {
       })
     });
 
-    this.planejamentoChanged.emit()
+    // Usar setTimeout para evitar ExpressionChangedAfterItHasBeenCheckedError
+    setTimeout(() => {
+      this.planejamentoChanged.emit()
+    }, 0);
   }
 
   getPlanejamento(usuario, date, campo) {
@@ -264,7 +270,11 @@ export class TablePlanejamentoSemanalComponent implements OnChanges, OnInit {
       planejamento[campo] = parseInt(value);
       planejamento.alterado = true
     }
-    this.valueChanged.emit()
+
+    // Usar setTimeout para evitar ExpressionChangedAfterItHasBeenCheckedError
+    setTimeout(() => {
+      this.valueChanged.emit()
+    }, 0);
   }
 
   getTooltipOutrosPlanejamentos(usuario, date, campo) {
@@ -525,7 +535,11 @@ export class TablePlanejamentoSemanalComponent implements OnChanges, OnInit {
         }
       })
     })
-    this.valueChanged.emit()
+
+    // Usar setTimeout para evitar ExpressionChangedAfterItHasBeenCheckedError
+    setTimeout(() => {
+      this.valueChanged.emit()
+    }, 0);
   }
 
   arredondarNumeros(numero: number) {
@@ -650,8 +664,11 @@ export class TablePlanejamentoSemanalComponent implements OnChanges, OnInit {
       restante -= alocar;
     }
 
-    this.valueChanged.emit();
-    this.planejamentoChanged.emit();
+    // Usar setTimeout para evitar ExpressionChangedAfterItHasBeenCheckedError
+    setTimeout(() => {
+      this.valueChanged.emit();
+      this.planejamentoChanged.emit();
+    }, 0);
   }
 
   // Tooltip agregado para a semana quando não há disponibilidade por outros planejamentos
