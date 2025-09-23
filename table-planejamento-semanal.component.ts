@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnInit, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnChanges, SimpleChanges, ChangeDetectorRef } from '@angular/core';
 import { FormGroup } from '@angular/forms';
 import { MatDialog } from '@angular/material';
 import { Router } from '@angular/router';
@@ -70,16 +70,28 @@ export class TablePlanejamentoSemanalComponent implements OnChanges, OnInit {
   ROTA_GESTOR = 'nova-hora-extra-gestor'
   ROTA_SUPERINTENDENTE = 'nova-hora-extra-superintendente'
 
+  // Flag para controlar emissões durante inicialização
+  private isInitializing = true;
+
   constructor(private dialog: MatDialog,
-    public router: Router) { }
+    public router: Router,
+    private cdr: ChangeDetectorRef) { }
 
   empregadosSelecionados = []
 
   ngOnInit() {
     this.routeCall = this.router.url.replace('/', '');
+
+    // Finalizar inicialização após um tempo para evitar problemas
+    setTimeout(() => {
+      this.isInitializing = false;
+    }, 100);
   }
 
   ngOnChanges(changes: SimpleChanges) {
+    // Marcar como inicializando durante mudanças
+    this.isInitializing = true;
+
     if (changes['formGroup'] && this.formGroup) {
       this.idPlanejamento = this.formGroup.value.id
       let dtini = this.formGroup.value['dataInicio']
@@ -97,6 +109,12 @@ export class TablePlanejamentoSemanalComponent implements OnChanges, OnInit {
         this.generateTableData();
       }
     }
+
+    // Finalizar inicialização após processamento
+    setTimeout(() => {
+      this.isInitializing = false;
+      this.cdr.detectChanges();
+    }, 0);
   }
 
   ajustarNovasInsercoes() {
@@ -113,10 +131,12 @@ export class TablePlanejamentoSemanalComponent implements OnChanges, OnInit {
       }
     });
 
-    // Usar setTimeout para evitar ExpressionChangedAfterItHasBeenCheckedError
-    setTimeout(() => {
-      this.planejamentoChanged.emit()
-    }, 0);
+    // Só emitir se não estiver inicializando
+    if (!this.isInitializing) {
+      setTimeout(() => {
+        this.planejamentoChanged.emit()
+      }, 0);
+    }
   }
 
   semanas: { numeroSemana: number; dataInicio: Date; dataFim: Date; dias: string[] }[] = [];
@@ -228,10 +248,12 @@ export class TablePlanejamentoSemanalComponent implements OnChanges, OnInit {
       })
     });
 
-    // Usar setTimeout para evitar ExpressionChangedAfterItHasBeenCheckedError
-    setTimeout(() => {
-      this.planejamentoChanged.emit()
-    }, 0);
+    // Só emitir se não estiver inicializando
+    if (!this.isInitializing) {
+      setTimeout(() => {
+        this.planejamentoChanged.emit()
+      }, 0);
+    }
   }
 
   getPlanejamento(usuario, date, campo) {
@@ -559,37 +581,50 @@ export class TablePlanejamentoSemanalComponent implements OnChanges, OnInit {
   }
 
   getSomaSemana(usuario, semana, campo) {
-    if (!usuario.planejamentos || !Array.isArray(usuario.planejamentos)) {
+    if (!usuario || !usuario.planejamentos || !Array.isArray(usuario.planejamentos) || !semana || !semana.dias) {
       return 0
     }
 
-    return semana.dias.reduce((soma, dia) => {
-      const planejamento = usuario.planejamentos.find(p => p.dataPlanejamento === dia);
-      return soma + (planejamento && planejamento[campo] ? parseFloat(planejamento[campo]) || 0 : 0);
-    }, 0);
+    try {
+      return semana.dias.reduce((soma, dia) => {
+        const planejamento = usuario.planejamentos.find(p => p.dataPlanejamento === dia);
+        const valor = planejamento && planejamento[campo] ? parseFloat(planejamento[campo]) || 0 : 0;
+        return soma + valor;
+      }, 0);
+    } catch (error) {
+      console.warn('Erro em getSomaSemana:', error);
+      return 0;
+    }
   }
 
   getValorTotalSemana(usuario, semana) {
-    if (!usuario.planejamentos || !Array.isArray(usuario.planejamentos)) {
+    if (!usuario || !usuario.planejamentos || !Array.isArray(usuario.planejamentos) || !semana || !semana.dias) {
       return '0,00'
     }
 
-    return semana.dias.reduce((total, dia) => {
-      const planejamento = usuario.planejamentos.find(p => p.dataPlanejamento === dia);
-      let valorTotal = 0;
+    try {
+      const total = semana.dias.reduce((total, dia) => {
+        const planejamento = usuario.planejamentos.find(p => p.dataPlanejamento === dia);
+        let valorTotal = 0;
 
-      if (planejamento && planejamento.limiteHe) {
-        valorTotal += parseFloat(planejamento.limiteHe) * parseFloat(usuario.valorDiurno || 0);
-      }
-      if (planejamento && planejamento.limiteHeEstendido) {
-        valorTotal += parseFloat(planejamento.limiteHeEstendido) * parseFloat(usuario.valorNoturno || 0);
-      }
-      if (planejamento && planejamento.limiteHeJustificado) {
-        valorTotal += parseFloat(planejamento.limiteHeJustificado) * parseFloat(usuario.valorNoturno || 0);
-      }
+        if (planejamento && planejamento.limiteHe) {
+          valorTotal += parseFloat(planejamento.limiteHe) * parseFloat(usuario.valorDiurno || 0);
+        }
+        if (planejamento && planejamento.limiteHeEstendido) {
+          valorTotal += parseFloat(planejamento.limiteHeEstendido) * parseFloat(usuario.valorNoturno || 0);
+        }
+        if (planejamento && planejamento.limiteHeJustificado) {
+          valorTotal += parseFloat(planejamento.limiteHeJustificado) * parseFloat(usuario.valorNoturno || 0);
+        }
 
-      return total + valorTotal;
-    }, 0).toFixed(2).replace('.', ',');
+        return total + valorTotal;
+      }, 0);
+
+      return total.toFixed(2).replace('.', ',');
+    } catch (error) {
+      console.warn('Erro em getValorTotalSemana:', error);
+      return '0,00';
+    }
   }
 
   // Dias elegíveis por campo (replica as regras do diário)
