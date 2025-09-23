@@ -1,0 +1,188 @@
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #F7FAFA;
+  border-radius: 4px;
+}
+
+th, td {
+  padding: 8px;
+  text-align: center;
+  vertical-align: bottom; /* igual ao diário */
+  white-space: nowrap;
+  min-width: 100px;
+  padding-left: 1rem;
+}
+
+thead th {
+  background-color: #f2f2f2;
+  position: sticky;
+  top: 0;
+  padding-left: 1rem;
+}
+
+.overflow {
+  overflow-x: scroll;
+}
+
+.content {
+  overflow-x: scroll;
+  overflow-y: scroll;
+  max-height: 500px;
+  background: #F7FAFA;
+  display: flex;
+  padding: 16px;
+  border-radius: 4px;
+}
+
+div[style="overflow-x: auto;"] {
+  max-width: 100%;
+}
+
+.table-info-limite-description {
+  min-width: 12rem;
+  border-bottom: 1px solid;
+  min-height: 1.5rem;
+  padding-bottom: 0.2rem;
+  padding-top: 0.2rem;
+  text-align: justify;
+}
+
+.table-info {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  min-width: 12rem;
+  border-bottom: 1px solid;
+  min-height: 1.5rem;
+  padding-bottom: 0.2rem;
+  padding-top: 0.2rem;
+}
+
+.table-info span, .table-info-limite-description span {
+  font-weight: 500;
+  font-size: 0.8rem;
+}
+
+.table-info-limite {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  border-bottom: 1px solid;
+  padding-left: 1rem;
+  padding-top: 0.2rem;
+  padding-bottom: 0.2rem;
+  min-height: 1.5rem; /* igual ao diário */
+}
+
+.table-info-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid transparent;
+  padding: 6px 8px 6px 1rem; /* ajustado para se aproximar do diário */
+  min-height: 1.5rem;
+}
+
+.table-info-limite input {
+  height: 1.3rem;
+  border: 1px solid #000;
+  border-radius: 4px;
+}
+
+.table-info-limite span {
+  font-weight: 500;
+  font-size: small;
+}
+
+.table-name {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  margin-top: 6px; /* ajustado para evitar “pulos” */
+  margin-bottom: 6px; /* ajustado para evitar “pulos” */
+  padding-bottom: 0.2rem;
+  padding-top: 0.2rem;
+}
+
+.table-name span {
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+
+.table-info-somatorios {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  min-width: 12rem;
+  border-bottom: 1px solid;
+  min-height: 1.5rem;
+  padding-bottom: 0.2rem;
+  padding-top: 0.2rem;
+}
+
+.table-info-somatorios span {
+  font-weight: 600;
+  font-size: small;
+  margin-left: 0.5rem;
+}
+
+.deleteButton {
+  color: #d40000;
+}
+.hourglassFull{
+  color: #0277bd;
+}
+
+.semanal-bloco {
+  padding: 6px 0 10px 0;
+  border-bottom: 1px solid rgba(0,0,0,0.12);
+  margin-bottom: 6px;
+}
+.semanal-label {
+  font-size: 12px;
+  color: rgba(0,0,0,0.87);
+  line-height: 1.15;
+  margin: 0; /* remove deslocamentos */
+}
+.semanal-hint {
+  display: block;
+  color: rgba(0,0,0,0.6);
+  font-size: 11px;
+  margin-top: 2px;
+}
+.semanal-input-wrap {
+  display: flex;
+  justify-content: center; /* centraliza o input dentro da largura fixa */
+  align-items: center;
+  width: 72px; /* mesmo espaço usado antes, padroniza a coluna de valores */
+}
+.semanal-input {
+  width: 64px;
+  height: 1.3rem;
+  text-align: center;
+  padding: 2px 6px;
+  border: 1px solid #000;
+  border-radius: 4px;
+  background: #fff;
+  color: #000;
+}
+.semanal-input:disabled {
+  opacity: 1; /* mantém aparência mesmo desabilitado */
+}
+.semanal-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  border-bottom: 1px solid;
+  padding-left: 1rem;
+  padding-top: 0.2rem;
+  padding-bottom: 0.2rem;
+  min-height: 1.5rem;
+}
+.semanal-total-valor {
+  white-space: nowrap;
+  font-weight: 500;
+}
