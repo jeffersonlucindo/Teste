@@ -1,0 +1,172 @@
+<section *ngIf="showMode === 'historic'">
+  <form [formGroup]="formGroupHistoricParams">
+    <mat-form-field>
+      <mat-select placeholder="Evento" formControlName="evento">
+        <mat-option
+          *ngFor="let item of [{ id:'INSERT', descricao: 'INCLUSÃO' }, { id: 'UPDATE', descricao: 'ALTERAÇÃO' }, { id:'DELETE', descricao: 'EXCLUSÃO' }]"
+          [value]="item.id">
+          {{ item.descricao }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field>
+      <input matInput [matDatepicker]="dataAlteracaoIni" placeholder="Data Início" formControlName="dataAlteracaoIni"
+        appDate [appDateFormGroup]="formGroupHistoricParams">
+      <mat-datepicker-toggle matSuffix [for]="dataAlteracaoIni"></mat-datepicker-toggle>
+      <mat-datepicker #dataAlteracaoIni></mat-datepicker>
+    </mat-form-field>
+    <mat-form-field>
+      <input matInput [min]="formGroupHistoricParams.value['dataAlteracaoIni']" [matDatepicker]="dataAlteracaoFim"
+        placeholder="Data Fim" formControlName="dataAlteracaoFim" appDate [appDateFormGroup]="formGroupHistoricParams">
+      <mat-datepicker-toggle matSuffix [for]="dataAlteracaoFim"></mat-datepicker-toggle>
+      <mat-datepicker #dataAlteracaoFim></mat-datepicker>
+      <mat-error *ngIf="formGroupHistoricParams.controls['dataAlteracaoFim'].errors?.matDatepickerMin">Data Fim menor
+        que Data Início</mat-error>
+    </mat-form-field>
+  </form>
+</section>
+
+<section id="buttonTop" *ngIf="displayButtons.top.length > 0">
+  <app-buttons [formGroup]="formGroup" [formGroupParams]="formGroupParams" [buttonsGroup]="displayButtons.top"
+    [service]="service" [route]="route" [downloadType]="downloadType"
+    [searchButtonValidateDisable]="searchValidateDisable" (save)="save()" (search)="search()" (clean)="cleanEvent()"
+    (showSearch)="showSearchMode()" (historic)="showHistoricMode()" (generatePdf)="generatePdf()"
+    (generateExcel)="generateExcel()" (saveCustom)="saveCustomEvent()" [rowsReturned]="dataSource.data.length" 
+    [hasPermissionToEdit]="hasPermissionToEdit" [hasPermissionToDelete]="hasPermissionToDelete">
+  </app-buttons>
+  <!-- <br> -->
+</section>
+<section id="tableAndButtons" *ngIf="showMode === 'search' || this.displayButtons.table.length > 0">
+  <div>
+    <!-- <div style="display: flow-root; padding: 0 10px 0px 12px;"> -->
+    <!-- <span style="display: flow-root; padding-right: 10px;"> -->
+    <app-buttons *ngIf="customizedButtonLabel !== ''" [buttonsGroup]="['customized']" [rowsSelected]="rowsSelected" 
+      [hasPermissionToEdit]="hasPermissionToEdit" [hasPermissionToDelete]="hasPermissionToDelete"
+      [customizedButtonLabel]="customizedButtonLabel" (customizedButtonEvent)="customizedButtonEvent()"
+      style="float: left;">
+    </app-buttons>
+    <app-buttons [buttonsGroup]="['all']" [rowsSelected]="rowsSelected" [rowsReturned]="dataSource.data.length" 
+      [hasPermissionToEdit]="hasPermissionToEdit" [hasPermissionToDelete]="hasPermissionToDelete"
+      (selectAllEvent)="selectAllEvent($event)" style="float: left; padding-top: 15px;"
+      *ngIf="displayButtons.table.indexOf('customized') > -1 || displayButtons.table.indexOf('delete') > -1">
+    </app-buttons>
+    <app-buttons [buttonsGroup]="displayButtons.table" [service]="service" [route]="route" [rowSelected]="rowSelected" 
+      [hasPermissionToEdit]="hasPermissionToEdit" [hasPermissionToDelete]="hasPermissionToDelete"
+      [rowsSelected]="rowsSelected" [rowsReturned]="dataSource.data.length" [downloadType]="downloadType"
+      (showSearch)="showSearchMode()" (showEdit)="showEditMode()" (delete)="delete()" (historic)="showHistoricMode()"
+      (edit)="editMode()" (generatePdf)="generatePdf()" (generateExcel)="generateExcel()" style="float: right;">
+    </app-buttons>
+  </div>
+  <span *ngIf="displayButtons.table.length > 0">
+    <br>
+    <br>
+    <br>
+    <br>
+  </span>
+  <div class="example-container mat-elevation-z8" *ngIf="displayButtons.table.length > 0">
+    <!-- <div> -->
+    <mat-progress-bar [mode]="showProgressBar"></mat-progress-bar>
+    <mat-table #table [dataSource]="dataSource" matSort (matSortChange)="sortData($event)" id="tableCrud">
+      <ng-container matColumnDef="{{item}}" *ngFor="let item of displayedColumns; let i = index" [sticky]="true"
+        stickyEnd>
+        <mat-header-cell *matHeaderCellDef [mat-sort-header]> {{displayedTitles[i] | uppercase}} </mat-header-cell>
+        <mat-cell *matCellDef="let element"
+          [ngStyle]="{'color': displayButtons.table.length >= 1 ? element['color'] : '', 'cursor': displayButtons.table.length >= 1 ? 'pointer' : ''}">
+
+          <span *ngIf="element[item] && element[item].isButton">
+            <button matTooltip="{{element[item].description}}" [ngStyle]="{'background-color' : element[item].color}" mat-raised-button color="primary">
+              <mat-icon>{{element[item].icon}}</mat-icon>
+            </button>
+          </span>
+
+          <ng-container *ngIf="!element[item] || !element[item].isButton">
+            <span *ngIf="element.tooltipValue" [matTooltip]="element.tooltipValue" matTooltipPosition="above">
+              {{ descriptionFormatted(element[item], item == columnDescription) }}
+            </span>
+            
+            <span *ngIf="!element.tooltipValue && tooltipReturn(element[item]) != ''" [matTooltip]="element[item]" matTooltipPosition="above">
+              {{ descriptionFormatted(element[item], item == columnDescription) }}
+            </span>
+            <span *ngIf="!element.tooltipValue && tooltipReturn(element[item]) == ''">
+              {{ descriptionFormatted(element[item], item == columnDescription) }}
+            </span>
+          </ng-container>
+
+        </mat-cell>
+        <ng-container *ngIf="footerRow.length > 0">
+          <mat-footer-cell *matFooterCellDef>
+            <ng-container *ngIf="i === 0"> Total </ng-container>
+            <ng-container *ngIf="i === displayedColumns.length -1">
+              {{footerRow}}
+            </ng-container>
+          </mat-footer-cell>
+        </ng-container>
+      </ng-container>
+      <mat-header-row
+        *matHeaderRowDef="innerWidth > 600 ? displayedColumns : displayedColumns.slice(0, 3)"></mat-header-row>
+      <mat-row *matRowDef="let row; columns: innerWidth > 600 ? displayedColumns : displayedColumns.slice(0, 3);"
+        (click)="selected(row)"
+        [ngStyle]="{'background-color': displayButtons.table.length >= 1 ? row['background'] : ''}"></mat-row>
+      <ng-container *ngIf="footerRow.length > 0">
+        <mat-footer-row *matFooterRowDef="displayedColumns;"></mat-footer-row>
+      </ng-container>
+    </mat-table>
+    <mat-paginator #paginator [pageSize]="pageSize" [pageSizeOptions]="pageSizeOptions">
+    </mat-paginator>
+  </div>
+</section>
+<!-- <br> -->
+
+<section *ngIf="showMode === 'historic'">
+  <app-buttons [formGroup]="formGroup" [formGroupParams]="formGroupParams" 
+    [hasPermissionToEdit]="hasPermissionToEdit" [hasPermissionToDelete]="hasPermissionToDelete"
+    [buttonsGroup]="['search', 'clean', 'exitHistoric', 'download']" [service]="service" [route]="route"
+    [downloadType]="['XML']" [rowsReturned]="dataSource.data.length" (search)="search()" (clean)="cleanEvent()"
+    (showSearch)="showSearchMode()" (generateExcel)="generateExcel()">
+  </app-buttons>
+  <br>
+  <br>
+  <div *ngFor="let item of listHistoric">
+    <mat-card class="containerIcons">
+      <mat-card-header (click)="item['show'] = !item['show']" style="cursor: pointer;">
+        <mat-card-title style="display: flex; font-size: 20px !important;">
+          <div class="iconTitle">
+            <mat-icon style="text-shadow: 1px 2px #000; padding-right: 7px;">view_list</mat-icon>
+          </div>
+          <div>
+            <!-- Registro {{item['id']}}, alterado em {{mask.dateTime(item['dataAlteracao'])}} -->
+            ID: {{item['id']}} | {{isDateTime(item['dataAlteracao'])}} | {{item['evento']}} |
+            {{item['matriculaUsuarioAlteracao']}}
+          </div>
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content *ngIf="item['show']">
+        <table style="width: 100%;">
+          <tr *ngFor="let title of displayedTitlesHst; let i = index">
+            <td [ngStyle]="{
+              'background': !item.ultimas_colunas_alteradas?.includes(displayedColumnsHst[i]) ? '#0277bd' : 'green',
+              'color': 'white',
+              'padding': '7px'
+            }">
+              {{title | uppercase}}
+            </td>
+            <td [ngStyle]="{
+              'background': !item.ultimas_colunas_alteradas?.includes(displayedColumnsHst[i]) ? '#29b6f6' : 'green',
+              'color': 'white',
+              'padding': '7px'
+            }">
+              {{isDateTime(item[displayedColumnsHst[i]])}}
+            </td>
+          </tr>
+        </table>
+      </mat-card-content>
+    </mat-card>
+    <br>
+  </div>
+</section>
+<br>
+<app-buttons [formGroup]="formGroup" [formGroupParams]="formGroupParams" [buttonsGroup]="['showSearch']" 
+  [hasPermissionToEdit]="hasPermissionToEdit" [hasPermissionToDelete]="hasPermissionToDelete"
+  (showSearch)="showSearchMode()"
+  *ngIf="showMode == 'edit' && type !== 'tabular' && type !== 'tabularHst' && this.displayButtons.table.length == 0">
+</app-buttons>
