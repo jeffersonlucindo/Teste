@@ -1,0 +1,35 @@
+core.js:13606 Angular is running in the development mode. Call enableProdMode() to enable the production mode.
+client:148 [WDS] Warnings while compiling.
+warnings @ client:148
+client:154 ./src/app/components/nova-auditoria-interna/acao-item/acao-item.component.css
+Module Warning (from ./node_modules/postcss-loader/src/index.js):
+Warning
+
+(106:5) end value has mixed support, consider using flex-end instead
+warnings @ client:154
+client:154 ./src/app/components/squad/squad.component.css
+Module Warning (from ./node_modules/postcss-loader/src/index.js):
+Warning
+
+(11:5) end value has mixed support, consider using flex-end instead
+warnings @ client:154
+client:154 ./src/app/components/hora-extra/hora-extra-planejamento/hora-extra-planejamento.component.css
+Module Warning (from ./node_modules/postcss-loader/src/index.js):
+Warning
+
+(42:5) end value has mixed support, consider using flex-end instead
+warnings @ client:154
+TablePlanejamentoComponent.html:67 ERROR Error: ExpressionChangedAfterItHasBeenCheckedError: Expression has changed after it was checked. Previous value: 'model: 1'. Current value: 'model: 0'.
+    at viewDebugError (core.js:16878:1)
+    at expressionChangedAfterItHasBeenCheckedError (core.js:16866:1)
+    at checkBindingNoChanges (core.js:16968:1)
+    at checkNoChangesNodeInline (core.js:19841:1)
+    at checkNoChangesNode (core.js:19828:1)
+    at debugCheckNoChangesNode (core.js:20432:1)
+    at debugCheckDirectivesFn (core.js:20360:1)
+    at Object.eval [as updateDirectives] (TablePlanejamentoComponent.html:67:11)
+    at Object.debugUpdateDirectives [as updateDirectives] (core.js:20349:1)
+    at checkNoChangesView (core.js:19727:1)
+View_TablePlanejamentoComponent_9 @ TablePlanejamentoComponent.html:67
+TablePlanejamentoComponent.html:67 ERROR CONTEXT DebugContext_
+View_TablePlanejamentoComponent_9 @ TablePlanejamentoComponent.html:67
