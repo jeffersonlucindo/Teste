@@ -1,0 +1,70 @@
+<section *ngIf="showMode == 'search' || showMode == 'historic'" style="width: 100%;">
+  <form [formGroup]="formGroupParams">
+    <!-- UNIDADES -->
+    <app-autocomplete-form placeholder="Unidade Responsável" [formGroup]="formGroupParams" propertyName="unidade"
+      [options]="listaUnidadeResponsavel">
+    </app-autocomplete-form>
+
+
+    <!-- TIPO AGRUPAMENTO -->
+    <mat-form-field>
+      <mat-select placeholder="Tipo de Agrupamento" formControlName="tipoAgrupamento">
+        <mat-option *ngFor="let item of opcoesTipo" [value]="item['id']" (click)="optionSelected(item)">
+          {{ item['descricao'] }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <!-- AGRUPAMENTO -->
+    <mat-form-field class="mat-form-field-select">
+      <mat-select placeholder="Agrupamento" formControlName="agrupamento">
+        <mat-option *ngFor="let item of listaAgrupamentoFiltered()" [value]="item.id"
+          (click)="agrupamentoSelecionado(item)">
+          {{ item.tipo + ' - ' + item.descricao }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <!-- EMPREGADO -->
+    <mat-form-field [ngStyle]="{ 'width': '48%' }">
+      <mat-label>Empregado</mat-label>
+      <input type="text" placeholder="Digite e Selecione ..." matInput formControlName="matriculaDescricao"
+        [matAutocomplete]="auto" (keyup)="getEmpregado($event.target.value)"
+        (keyup.enter)="setEmpregado($event.target.value, 'search')">
+      <mat-autocomplete #auto="matAutocomplete">
+        <mat-option *ngFor="let empregado of listAutoEmpregado" [value]="empregado.description"
+          (click)="setEmpregado(empregado['description'])" [matTooltip]="empregado['description']"
+          matTooltipPosition="above" [value]="empregado.id">
+          {{empregado['description']}}
+        </mat-option>
+      </mat-autocomplete>
+    </mat-form-field>
+
+    <!-- DATA INICIAL -->
+    <mat-form-field color="primary">
+      <input matInput id="dataInicio" [matDatepicker]="pickerDtInicio" placeholder="Data de Início"
+        formControlName="dataInicio" appDate [appDateFormGroup]="formGroup" (dateInput)="onchangeDtInicial($event)">
+      <mat-datepicker-toggle matSuffix [for]="pickerDtInicio"></mat-datepicker-toggle>
+      <mat-datepicker #pickerDtInicio>
+      </mat-datepicker>
+    </mat-form-field>
+
+    <!-- DATA FIM -->
+    <mat-form-field color="primary">
+      <input matInput id="dataEncerramento" [matDatepicker]="pickerEncerramento" placeholder="Data de Encerramento"
+        formControlName="dataEncerramento" appDate [appDateFormGroup]="formGroup" [min]="minDate">
+      <mat-datepicker-toggle matSuffix [for]="pickerEncerramento"></mat-datepicker-toggle>
+      <mat-datepicker #pickerEncerramento>
+      </mat-datepicker>
+    </mat-form-field>
+  </form>
+</section>
+<section *ngIf="showMode == 'edit'">
+  <app-hora-extra-planejamento [heEdicao]="heEdicao" (backEvent)="back()"></app-hora-extra-planejamento>
+</section>
+<app-crud *ngIf="showMode == 'search' || showMode == 'historic'" [showMode]="showMode" [service]="service" [route]="route"
+  [formGroup]="formGroup" [formGroupParams]="formGroupParams" [displayedTitles]="displayedTitles"
+  [displayedColumns]="displayedColumns" [displayedTitlesHst]="displayedTitlesHst"
+  [displayedColumnsHst]="displayedColumnsHst" (showModeEvent)="showModeEvent($event)"
+  (beforeEdit)=" heEdicao = $event; " [displayButtons]="displayButtons"
+  [shouldSearchOnLoad]="true"></app-crud>
