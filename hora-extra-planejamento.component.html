@@ -51,7 +51,8 @@
   
 
   <!-- </div> -->
-  <mat-tab-group >
+  <div class="app-planejamento-totalizadores" style="margin-top: 2rem;">
+    <mat-tab-group style="width: 80%">
     <mat-tab label="Planejamento Diário">
       <div class="app-planejamento-totalizadores"
         *ngIf="planejamento && planejamento.usuarioPlanejamento && planejamento.usuarioPlanejamento.length > 0">
@@ -91,6 +92,7 @@
       </div>
     </mat-tab>
   </mat-tab-group>
+  </div>
   <div class="app-planejamento-totalizadores empty-table"
     *ngIf="!planejamento.usuarioPlanejamento || planejamento.usuarioPlanejamento.length == 0">
     Nenhum empregado selecionado.
